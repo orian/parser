@@ -44,6 +44,12 @@ func (p *ParserBuilder) Add(v interface{}) {
 	}
 }
 
+func (p *ParserBuilder) AddMany(args ...interface{}) {
+	for _, v := range args {
+		p.Add(v)
+	}
+}
+
 func Int32Parser(dest *int32) func(interface{}) error {
 	return func(v interface{}) error {
 		d, err := strconv.ParseInt(v.(string), 10, 32)
@@ -88,16 +94,39 @@ func StringParser(dest *string) func(interface{}) error {
 	}
 }
 
-func (p *ParserBuilder) Parse(row []interface{}) error {
-	if len(row) != len(p.parsers) {
-		return fmt.Errorf("row len, want: %d, got: %d", len(p.parsers), len(row))
-	}
+func (p *ParserBuilder) Parse(row interface{}) error {
 	var err error
-	for i, parser := range p.parsers {
-		err = parser(row[i])
-		if err != nil {
-			return err
+	switch row.(type) {
+	case [][]byte:
+		r := row.([][]byte)
+		if len(r) != len(p.parsers) {
+			return fmt.Errorf("row len, want: %d, got: %d", len(p.parsers), len(r))
 		}
+		for i, parser := range p.parsers {
+			err = parser(string(r[i]))
+			if err != nil {
+				return err
+			}
+		}
+	case []string:
+		r := row.([]string)
+		for i, parser := range p.parsers {
+			err = parser(r[i])
+			if err != nil {
+				return err
+			}
+		}
+	case []interface{}:
+		r := row.([]interface{})
+		for i, parser := range p.parsers {
+			err = parser(r[i])
+			if err != nil {
+				return err
+			}
+		}
+	default:
+		var r = reflect.TypeOf(row)
+		return fmt.Errorf("cannot handle type: %v", r)
 	}
 	return nil
 }

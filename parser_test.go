@@ -57,3 +57,21 @@ func TestSliceOfIfc(t *testing.T) {
 		t.Errorf("want: `napis`, got %q", s)
 	}
 }
+
+func TestSSBytes(t *testing.T) {
+	p := New()
+	var f float32
+	var s string
+	ifc := []interface{}{&f, &s}
+	p.Add(ifc)
+	if err := p.Parse([][]byte{[]byte("3.14"), []byte("napis")}); err != nil {
+		t.Errorf("parse error: %v", err)
+	}
+	if f != 3.14 {
+		t.Errorf("want: 3.14, got %f", f)
+	}
+
+	if s != "napis" {
+		t.Errorf("want: `napis`, got %q", s)
+	}
+}
